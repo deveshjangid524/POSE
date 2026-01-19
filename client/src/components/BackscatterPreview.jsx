@@ -106,16 +106,16 @@ function BackscatterPreview() {
   const summary = getSummaryData();
 
   return (
-    <div className="backscatter-preview-container">
+    <div className="bg-white p-8 rounded-lg">
       <h2>🔬 Backscatter Preview Simulation</h2>
 
-      <div className="preview-grid">
+      <div className="grid grid-cols-[350px_1fr] gap-8 mt-6">
         {/* Controls Panel */}
-        <div className="controls-panel">
-          <h3>Simulation Controls</h3>
+        <div className="bg-gray-50 p-6 rounded-lg h-fit">
+          <h3 className="text-lg font-medium mb-4">Simulation Controls</h3>
 
-          <div className="form-group">
-            <label>Region:</label>
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">Region:</label>
             <select 
               value={config.region}
               onChange={(e) => setConfig({...config, region: e.target.value})}
@@ -130,8 +130,8 @@ function BackscatterPreview() {
 
           {config.region === 'Custom Area' && (
             <>
-              <div className="form-group">
-                <label>Custom Latitude:</label>
+              <div className="mb-4">
+                <label className="block mb-2 font-medium">Custom Latitude:</label>
                 <input 
                   type="number" 
                   value={config.customLat}
@@ -139,8 +139,8 @@ function BackscatterPreview() {
                   step="0.1"
                 />
               </div>
-              <div className="form-group">
-                <label>Custom Longitude:</label>
+              <div className="mb-4">
+                <label className="block mb-2 font-medium">Custom Longitude:</label>
                 <input 
                   type="number" 
                   value={config.customLon}
@@ -151,8 +151,8 @@ function BackscatterPreview() {
             </>
           )}
 
-          <div className="form-group">
-            <label>Spill Probability (%): {config.spillProbability}</label>
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">Spill Probability (%): {config.spillProbability}</label>
             <input
               type="range"
               min="0"
@@ -162,8 +162,8 @@ function BackscatterPreview() {
             />
           </div>
 
-          <div className="form-group">
-            <label>VV Threshold (dB): {config.vvThreshold}</label>
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">VV Threshold (dB): {config.vvThreshold}</label>
             <input
               type="range"
               min="-30"
@@ -173,8 +173,8 @@ function BackscatterPreview() {
             />
           </div>
 
-          <div className="form-group">
-            <label>Wind Conditions:</label>
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">Wind Conditions:</label>
             <select 
               value={config.windConditions}
               onChange={(e) => setConfig({...config, windConditions: Number(e.target.value)})}
@@ -185,19 +185,19 @@ function BackscatterPreview() {
             </select>
           </div>
 
-          <div className="button-group">
-            <button onClick={generateSimulation} className="btn btn-success">
+          <div className="flex gap-2 flex-col">
+            <button onClick={generateSimulation} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
               ▶️ Run Simulation
             </button>
-            <button onClick={clearSimulation} className="btn btn-warning">
+            <button onClick={clearSimulation} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
               🗑️ Clear Simulation
             </button>
           </div>
 
           <hr />
 
-          <div className="status-panel">
-            <h4>Simulation Status:</h4>
+          <div className="bg-gray-200 p-4 rounded">
+            <h4 className="text-lg font-medium mb-2">Simulation Status:</h4>
             <p>
               {simulationData 
                 ? `🟢 Simulation active - ${simulationData.length} simulated points`
@@ -208,8 +208,8 @@ function BackscatterPreview() {
         </div>
 
         {/* Map and Summary */}
-        <div className="map-summary-panel">
-          <h3>Simulation Map</h3>
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h3 className="text-lg font-medium mb-4">Simulation Map</h3>
           
           {simulationData ? (
             <MapContainer 
@@ -241,15 +241,15 @@ function BackscatterPreview() {
               ))}
             </MapContainer>
           ) : (
-            <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0' }}>
+            <div className="h-[400px] flex items-center justify-center bg-gray-100">
               <p>Click "Run Simulation" to generate preview data</p>
             </div>
           )}
 
           {summary && (
-            <div className="summary-grid">
-              <div className="summary-box">
-                <h4>Simulation Summary</h4>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="bg-white p-4 rounded-lg">
+                <h4 className="text-lg font-medium mb-2">Simulation Summary</h4>
                 <table>
                   <tbody>
                     <tr>
@@ -276,8 +276,8 @@ function BackscatterPreview() {
                 </table>
               </div>
 
-              <div className="risk-indicator">
-                <h4>Risk Assessment</h4>
+              <div className="bg-white p-4 rounded-lg">
+                <h4 className="text-lg font-medium mb-2">Risk Assessment</h4>
                 <div 
                   className="risk-box"
                   style={{
@@ -304,7 +304,7 @@ function BackscatterPreview() {
 
       {/* Backscatter Profile */}
       {simulationData && (
-        <div className="chart-panel">
+        <div className="bg-white p-6 rounded-lg mt-8">
           <h3>Backscatter Distribution</h3>
           <BarChart width={800} height={250} data={getHistogramData()}>
             <CartesianGrid strokeDasharray="3 3" />

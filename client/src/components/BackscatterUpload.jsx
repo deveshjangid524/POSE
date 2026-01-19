@@ -72,42 +72,42 @@ function BackscatterUpload() {
   const stats = getStats();
 
   return (
-    <div className="backscatter-upload-container">
-      <h2>📡 Upload Actual Backscatter Data</h2>
+    <div className="bg-white p-8 rounded-lg">
+      <h2 className="text-lg font-bold mb-4">📡 Upload Actual Backscatter Data</h2>
 
-      <div className="upload-section">
+      <div className="grid grid-cols-2 gap-8 mt-6">
         {/* Upload Panel */}
-        <div className="upload-box">
-          <h3>Upload Satellite Data</h3>
+        <div className="bg-gray-50 p-6 rounded-lg border border-gray-300">
+          <h3 className="text-lg font-medium mb-2">Upload Satellite Data</h3>
           <input 
             type="file" 
             accept=".csv" 
             onChange={handleFileChange}
-            className="file-input"
+            className="w-full p-2 mt-4"
           />
-          <p>Upload CSV with columns: Region, Lat, Lon, VV_Backscatter, HH_Backscatter, Date</p>
+          <p className="text-sm text-gray-600">Upload CSV with columns: Region, Lat, Lon, VV_Backscatter, HH_Backscatter, Date</p>
           
-          <div className="button-group">
+          <div className="flex gap-2 mt-4">
             <button 
               onClick={handleUpload} 
               disabled={loading}
-              className="btn btn-primary"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? 'Uploading...' : '📤 Upload Data'}
             </button>
             <button 
               onClick={useSampleData}
-              className="btn btn-info"
+              className="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700"
             >
               📋 Use Sample Data
             </button>
           </div>
 
-          <hr />
+          <hr className="my-4" />
 
-          <div className="status-box">
-            <h4>Data Status:</h4>
-            <p>
+          <div className="bg-gray-100 p-4 rounded mt-4">
+            <h4 className="text-lg font-medium mb-2">Data Status:</h4>
+            <p className="text-sm text-gray-600">
               {backscatterData.length > 0 
                 ? `🟢 ${backscatterData.length} satellite measurements loaded`
                 : '📋 No data loaded - Upload file or use sample data'
@@ -118,35 +118,35 @@ function BackscatterUpload() {
 
         {/* Detection Summary */}
         {stats && (
-          <div className="detection-summary">
-            <h3 style={{color: 'red'}}>Official Detection Summary</h3>
-            <p className="detection-text">
+          <div className="bg-yellow-50 p-6 rounded-lg border-2 border-yellow-400">
+            <h3 className="text-red-600 text-lg font-bold">Official Detection Summary</h3>
+            <p className="text-lg font-bold text-red-600">
               🔍 {stats.suspectedSpills} of {backscatterData.length} measurements 
               show potential oil spills (VV &lt; -20 dB)
             </p>
             
-            <h4>Backscatter Statistics</h4>
-            <table className="stats-table">
+            <h4 className="text-lg font-medium mb-2">Backscatter Statistics</h4>
+            <table className="w-full mt-4">
               <tbody>
                 <tr>
-                  <td>Avg VV Backscatter:</td>
-                  <td>{stats.avgVV} dB</td>
+                  <td className="p-2 border-b border-gray-300">Avg VV Backscatter:</td>
+                  <td className="p-2 border-b border-gray-300">{stats.avgVV} dB</td>
                 </tr>
                 <tr>
-                  <td>Min VV Backscatter:</td>
-                  <td>{stats.minVV} dB</td>
+                  <td className="p-2 border-b border-gray-300">Min VV Backscatter:</td>
+                  <td className="p-2 border-b border-gray-300">{stats.minVV} dB</td>
                 </tr>
                 <tr>
-                  <td>Max VV Backscatter:</td>
-                  <td>{stats.maxVV} dB</td>
+                  <td className="p-2 border-b border-gray-300">Max VV Backscatter:</td>
+                  <td className="p-2 border-b border-gray-300">{stats.maxVV} dB</td>
                 </tr>
                 <tr>
-                  <td>Avg HH Backscatter:</td>
-                  <td>{stats.avgHH} dB</td>
+                  <td className="p-2 border-b border-gray-300">Avg HH Backscatter:</td>
+                  <td className="p-2 border-b border-gray-300">{stats.avgHH} dB</td>
                 </tr>
                 <tr>
-                  <td>Suspected Spills:</td>
-                  <td style={{color: 'red', fontWeight: 'bold'}}>{stats.suspectedSpills}</td>
+                  <td className="p-2 border-b border-gray-300">Suspected Spills:</td>
+                  <td className="p-2 border-b border-gray-300 text-red-600 font-bold">{stats.suspectedSpills}</td>
                 </tr>
               </tbody>
             </table>
@@ -156,9 +156,9 @@ function BackscatterUpload() {
 
       {/* Map and Chart */}
       {backscatterData.length > 0 && (
-        <div className="visualization-section">
+        <div className="grid grid-cols-2 gap-8 mt-8">
           <div className="map-container">
-            <h3>Backscatter Measurement Map</h3>
+            <h3 className="text-lg font-medium mb-4">Backscatter Measurement Map</h3>
             <MapContainer 
               center={[20, 0]} 
               zoom={2} 
@@ -191,7 +191,7 @@ function BackscatterUpload() {
           </div>
 
           <div className="chart-container">
-            <h3>Backscatter Time Series</h3>
+            <h3 className="text-lg font-medium mb-4">Backscatter Time Series</h3>
             <LineChart width={400} height={500} data={backscatterData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="Date" angle={-45} textAnchor="end" height={100} />

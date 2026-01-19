@@ -45,35 +45,35 @@ function DataAnalysis() {
   const stats = getSummaryStats();
 
   return (
-    <div className="analysis-container">
+    <div className="bg-white p-8 rounded-lg">
       <h2>📈 Data Analysis</h2>
 
-      <div className="analysis-grid">
+      <div className="grid grid-cols-1 2fr gap-8 mt-6">
         {/* Summary Stats */}
-        <div className="summary-panel">
-          <h3>Data Summary</h3>
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h3 className="text-lg font-medium mb-4">Data Summary</h3>
           {stats ? (
-            <table className="summary-table">
+            <table className="w-full mt-4">
               <tbody>
                 <tr>
-                  <td>Total Regions:</td>
-                  <td>{stats.totalRegions}</td>
+                  <td className="p-3 border-b border-gray-300 font-semibold">Total Regions:</td>
+                  <td className="p-3 border-b border-gray-300">{stats.totalRegions}</td>
                 </tr>
                 <tr>
-                  <td>Total Spills:</td>
-                  <td>{stats.totalSpills}</td>
+                  <td className="p-3 border-b border-gray-300 font-semibold">Total Spills:</td>
+                  <td className="p-3 border-b border-gray-300">{stats.totalSpills}</td>
                 </tr>
                 <tr>
-                  <td>Average Spills:</td>
-                  <td>{stats.avgSpills}</td>
+                  <td className="p-3 border-b border-gray-300 font-semibold">Average Spills:</td>
+                  <td className="p-3 border-b border-gray-300">{stats.avgSpills}</td>
                 </tr>
                 <tr>
-                  <td>Max Spills:</td>
-                  <td>{stats.maxSpills}</td>
+                  <td className="p-3 border-b border-gray-300 font-semibold">Max Spills:</td>
+                  <td className="p-3 border-b border-gray-300">{stats.maxSpills}</td>
                 </tr>
                 <tr>
-                  <td>Min Spills:</td>
-                  <td>{stats.minSpills}</td>
+                  <td className="p-3 border-b border-gray-300 font-semibold">Min Spills:</td>
+                  <td className="p-3 border-b border-gray-300">{stats.minSpills}</td>
                 </tr>
               </tbody>
             </table>
@@ -83,8 +83,8 @@ function DataAnalysis() {
         </div>
 
         {/* Visualization */}
-        <div className="chart-panel">
-          <h3>Spill Count Visualization</h3>
+        <div className="bg-white p-6 rounded-lg mt-8">
+          <h3 className="text-lg font-medium mb-4">Spill Count Visualization</h3>
           {chartData.length > 0 ? (
             <BarChart width={600} height={300} data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -101,11 +101,11 @@ function DataAnalysis() {
       </div>
 
       {/* Filters */}
-      <div className="filter-section">
-        <h3>Filter Data</h3>
-        <div className="filter-controls">
-          <div className="form-group">
-            <label>Filter by Region:</label>
+      <div className="bg-gray-50 p-6 rounded-lg mt-8">
+        <h3 className="text-lg font-medium mb-4">Filter Data</h3>
+        <div className="grid grid-cols-2 gap-8 mt-4">
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">Filter by Region:</label>
             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
               <option value="All">All</option>
               {[...new Set(data.map(item => item.Region))].map(region => (
@@ -114,8 +114,8 @@ function DataAnalysis() {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Minimum Spill Count: {spillFilter}</label>
+          <div className="mb-4">
+            <label className="block mb-2 font-medium">Minimum Spill Count: {spillFilter}</label>
             <input
               type="range"
               min="0"
@@ -128,27 +128,27 @@ function DataAnalysis() {
       </div>
 
       {/* Filtered Data Table */}
-      <div className="table-section">
-        <h3>Filtered Data Table</h3>
+      <div className="mt-8">
+        <h3 className="text-lg font-medium mb-4">Filtered Data Table</h3>
         {filteredData.length > 0 ? (
-          <table className="data-table">
+          <table className="w-full border-collapse mt-4">
             <thead>
               <tr>
-                <th>Region</th>
-                <th>Spill Count</th>
-                <th>ROI Level</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
+                <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Region</th>
+                <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Spill Count</th>
+                <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">ROI Level</th>
+                <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Latitude</th>
+                <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Longitude</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.Region}</td>
-                  <td>{item.Spill_Count}</td>
-                  <td>{item.ROI_Level}</td>
-                  <td>{item.Lat}</td>
-                  <td>{item.Lon}</td>
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="p-3 text-left border-b border-gray-300">{item.Region}</td>
+                  <td className="p-3 text-left border-b border-gray-300">{item.Spill_Count}</td>
+                  <td className="p-3 text-left border-b border-gray-300">{item.ROI_Level}</td>
+                  <td className="p-3 text-left border-b border-gray-300">{item.Lat}</td>
+                  <td className="p-3 text-left border-b border-gray-300">{item.Lon}</td>
                 </tr>
               ))}
             </tbody>

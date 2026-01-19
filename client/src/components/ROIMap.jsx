@@ -48,20 +48,20 @@ function ROIMap() {
   });
 
   return (
-    <div className="roi-container">
-      <h2>🗺️ ROI Visualization</h2>
+    <div className="bg-white p-8 rounded-lg">
+      <h2 className="text-lg font-medium mb-4">🗺️ ROI Visualization</h2>
 
-      <div className="roi-grid">
+      <div className="grid grid-cols-[300px_1fr] gap-8 mt-6">
         {/* Filters Panel */}
-        <div className="filter-panel">
-          <h3>Map Filters</h3>
+        <div className="bg-gray-50 p-6 rounded-lg h-fit">
+          <h3 className="text-lg font-medium mb-4">Map Filters</h3>
           
-          <div className="filter-group">
-            <label>Filter by Region:</label>
+          <div className="mb-6">
+            <label className="block mb-2 font-medium">Filter by Region:</label>
             <select 
               value={regionFilter} 
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="filter-select"
+              className="w-full p-2 mt-2"
             >
               {regions.map(region => (
                 <option key={region} value={region}>{region}</option>
@@ -69,44 +69,44 @@ function ROIMap() {
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>Minimum Spill Count: {spillFilter}</label>
+          <div className="mb-6">
+            <label className="block mb-2 font-medium">Minimum Spill Count: {spillFilter}</label>
             <input
               type="range"
               min="0"
               max="20"
               value={spillFilter}
               onChange={(e) => setSpillFilter(Number(e.target.value))}
-              className="filter-slider"
+              className="w-full p-2 mt-2"
             />
           </div>
 
-          <hr />
+          <hr className="my-4" />
 
-          <div className="legend">
-            <h4>Legend:</h4>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: 'darkred'}}></span>
+          <div className="mt-4">
+            <h4 className="text-lg font-medium mb-2">Legend:</h4>
+            <div className="flex items-center mb-2">
+              <span className="w-5 h-5 rounded-full mr-2" style={{backgroundColor: 'darkred'}}></span>
               <span>Very High Risk</span>
             </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: 'red'}}></span>
+            <div className="flex items-center mb-2">
+              <span className="w-5 h-5 rounded-full mr-2" style={{backgroundColor: 'red'}}></span>
               <span>High Risk</span>
             </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: 'orange'}}></span>
+            <div className="flex items-center mb-2">
+              <span className="w-5 h-5 rounded-full mr-2" style={{backgroundColor: 'orange'}}></span>
               <span>Medium Risk</span>
             </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{backgroundColor: 'green'}}></span>
+            <div className="flex items-center mb-2">
+              <span className="w-5 h-5 rounded-full mr-2" style={{backgroundColor: 'green'}}></span>
               <span>Low Risk</span>
             </div>
           </div>
         </div>
 
         {/* Map */}
-        <div className="map-panel">
-          <h3>Oil Spill Map</h3>
+        <div className="bg-white p-6 rounded-lg">
+          <h3 className="text-lg font-medium mb-4">Oil Spill Map</h3>
           {filteredData.length > 0 ? (
             <MapContainer 
               center={[20, 0]} 

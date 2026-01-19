@@ -7,7 +7,6 @@ import BackscatterPreview from './BackscatterPreview';
 import BackscatterUpload from './BackscatterUpload';
 import SentinelFilter from './SentinelFilter';
 import DataAnalysis from './DataAnalysis';
-import '../styles/Dashboard.css';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -19,57 +18,54 @@ function Dashboard() {
   };
 
   return (
-    <div className="dashboard-container">
-      {/* Dashboard Header */}
-      <div className="dashboard-header">
-        <h2>🌊 Oil Spill Dashboard</h2>
-      </div>
+    <div className="min-h-screen bg-gray-100">
+      
 
-      <div className="dashboard-layout">
+      <div className="flex min-h-[calc(100vh-80px)]">
         {/* Sidebar */}
-        <div className="dashboard-sidebar">
-          <div className="sidebar-menu">
+        <div className="w-64 bg-slate-800 text-white p-0">
+          <div className="flex flex-col">
             <div 
-              className={`menu-item ${activeTab === 'upload' ? 'active' : ''}`}
+              className={`p-4 cursor-pointer transition-colors duration-300 border-l-4 border-transparent hover:bg-slate-700 ${activeTab === 'upload' ? 'bg-blue-500 border-l-white' : ''}`}
               onClick={() => handleTabClick('upload', '/dashboard/upload')}
             >
               📤 Upload Dataset
             </div>
 
             <div 
-              className={`menu-item ${activeTab === 'manual' ? 'active' : ''}`}
+              className={`p-4 cursor-pointer transition-colors duration-300 border-l-4 border-transparent hover:bg-slate-700 ${activeTab === 'manual' ? 'bg-blue-500 border-l-white' : ''}`}
               onClick={() => handleTabClick('manual', '/dashboard/manual-input')}
             >
               ✏️ Manual Data Input
             </div>
 
             <div 
-              className={`menu-item ${activeTab === 'roi' ? 'active' : ''}`}
+              className={`p-4 cursor-pointer transition-colors duration-300 border-l-4 border-transparent hover:bg-slate-700 ${activeTab === 'roi' ? 'bg-blue-500 border-l-white' : ''}`}
               onClick={() => handleTabClick('roi', '/dashboard/roi')}
             >
               🗺️ ROI Visualization
             </div>
 
-            <div className="menu-section">
-              <div className="menu-section-title">📡 Backscatter Analysis</div>
+            <div className="mt-4">
+              <div className="p-2 text-sm text-gray-400 font-bold">📡 Backscatter Analysis</div>
               <div 
-                className={`menu-subitem ${activeTab === 'backscatter-preview' ? 'active' : ''}`}
+                className={`p-3 cursor-pointer transition-colors duration-300 text-sm hover:bg-slate-700 ${activeTab === 'backscatter-preview' ? 'bg-blue-600' : ''}`}
                 onClick={() => handleTabClick('backscatter-preview', '/dashboard/backscatter-preview')}
               >
                 👁️ Preview Backscatter
               </div>
               <div 
-                className={`menu-subitem ${activeTab === 'backscatter-upload' ? 'active' : ''}`}
+                className={`p-3 cursor-pointer transition-colors duration-300 text-sm hover:bg-slate-700 ${activeTab === 'backscatter-upload' ? 'bg-blue-600' : ''}`}
                 onClick={() => handleTabClick('backscatter-upload', '/dashboard/backscatter-upload')}
               >
                 📤 Upload Actual Data
               </div>
             </div>
 
-            <div className="menu-section">
-              <div className="menu-section-title">🔍 SAR Data Filtering</div>
+            <div className="mt-4">
+              <div className="p-2 text-sm text-gray-400 font-bold">🔍 SAR Data Filtering</div>
               <div 
-                className={`menu-subitem ${activeTab === 'sentinel' ? 'active' : ''}`}
+                className={`p-3 cursor-pointer transition-colors duration-300 text-sm hover:bg-slate-700 ${activeTab === 'sentinel' ? 'bg-blue-600' : ''}`}
                 onClick={() => handleTabClick('sentinel', '/dashboard/sentinel-filter')}
               >
                 🛰️ Sentinel-1 Filter
@@ -77,7 +73,7 @@ function Dashboard() {
             </div>
 
             <div 
-              className={`menu-item ${activeTab === 'analysis' ? 'active' : ''}`}
+              className={`p-4 cursor-pointer transition-colors duration-300 border-l-4 border-transparent hover:bg-slate-700 ${activeTab === 'analysis' ? 'bg-blue-500 border-l-white' : ''}`}
               onClick={() => handleTabClick('analysis', '/dashboard/analysis')}
             >
               📊 Data Analysis
@@ -86,7 +82,7 @@ function Dashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="dashboard-content">
+        <div className="flex-1 p-8 overflow-y-auto">
           <Routes>
             <Route path="/" element={<UploadData />} />
             <Route path="/upload" element={<UploadData />} />

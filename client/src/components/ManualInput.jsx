@@ -62,43 +62,46 @@ function ManualInput() {
   };
 
   return (
-    <div className="manual-input-container">
+    <div className="bg-white p-8 rounded-lg">
       <h2>✏️ Manual Data Input</h2>
 
-      <div className="manual-grid">
-        <div className="form-box">
-          <h3>Add New Data Point</h3>
+      <div className="grid grid-cols-2 gap-8 mt-6">
+        <div className="bg-gray-50 p-6 rounded-lg border border-gray-300">
+          <h3 className="text-lg font-medium mb-4">Add New Data Point</h3>
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Region Name</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Region Name</label>
               <input
                 type="text"
                 name="region"
                 value={formData.region}
                 onChange={handleChange}
                 placeholder="Enter region name"
+                className="w-full p-2 border border-gray-300 rounded"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Spill Count</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Spill Count</label>
               <input
                 type="number"
                 name="spillCount"
                 value={formData.spillCount}
                 onChange={handleChange}
                 min="0"
+                className="w-full p-2 border border-gray-300 rounded"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>ROI Level</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">ROI Level</label>
               <select
                 name="roiLevel"
                 value={formData.roiLevel}
                 onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -107,8 +110,8 @@ function ManualInput() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Latitude</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Latitude</label>
               <input
                 type="number"
                 name="lat"
@@ -117,12 +120,13 @@ function ManualInput() {
                 step="0.0001"
                 min="-90"
                 max="90"
+                className="w-full p-2 border border-gray-300 rounded"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Longitude</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Longitude</label>
               <input
                 type="number"
                 name="lon"
@@ -131,37 +135,38 @@ function ManualInput() {
                 step="0.0001"
                 min="-180"
                 max="180"
+                className="w-full p-2 border border-gray-300 rounded"
                 required
               />
             </div>
 
-            <button type="submit" className="btn btn-success">
+            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
               ➕ Add Data Point
             </button>
           </form>
         </div>
 
-        <div className="table-box">
-          <h3>Manual Data Records</h3>
+        <div className="bg-gray-50 p-6 rounded-lg border border-gray-300">
+          <h3 className="text-lg font-medium mb-4">Manual Data Records</h3>
           {manualData.length > 0 ? (
-            <table className="data-table">
+            <table className="w-full border-collapse mt-4">
               <thead>
                 <tr>
-                  <th>Region</th>
-                  <th>Spill Count</th>
-                  <th>ROI Level</th>
-                  <th>Lat</th>
-                  <th>Lon</th>
+                  <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Region</th>
+                  <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Spill Count</th>
+                  <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">ROI Level</th>
+                  <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Lat</th>
+                  <th className="p-3 text-left border-b border-gray-300 bg-gray-200 font-semibold">Lon</th>
                 </tr>
               </thead>
               <tbody>
                 {manualData.map((row, index) => (
-                  <tr key={index}>
-                    <td>{row.Region}</td>
-                    <td>{row.Spill_Count}</td>
-                    <td>{row.ROI_Level}</td>
-                    <td>{row.Lat}</td>
-                    <td>{row.Lon}</td>
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="p-3 text-left border-b border-gray-300">{row.Region}</td>
+                    <td className="p-3 text-left border-b border-gray-300">{row.Spill_Count}</td>
+                    <td className="p-3 text-left border-b border-gray-300">{row.ROI_Level}</td>
+                    <td className="p-3 text-left border-b border-gray-300">{row.Lat}</td>
+                    <td className="p-3 text-left border-b border-gray-300">{row.Lon}</td>
                   </tr>
                 ))}
               </tbody>
