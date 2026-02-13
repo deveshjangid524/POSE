@@ -61,7 +61,7 @@ function ROIMap() {
             <select 
               value={regionFilter} 
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="w-full p-2 mt-2"
+              className="w-full p-2 mt-2 bg-slate-300"
             >
               {regions.map(region => (
                 <option key={region} value={region}>{region}</option>

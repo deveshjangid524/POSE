@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/earthengine": "^1.7.12",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
+    "dotenv": "^17.3.1",
+    "google-auth-library": "^10.5.0",
     "leaflet": "^1.9.4",
     "papaparse": "^5.5.3",
     "react": "^19.2.0",
