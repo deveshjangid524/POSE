@@ -1,3 +1,5 @@
+import React from 'react'
+
 function Overview() {
   return (
     <div className="min-h-screen" style={{backgroundImage: 'url(/src/assets/I1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed'}}>

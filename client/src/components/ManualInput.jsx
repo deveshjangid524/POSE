@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -18,9 +19,13 @@ function ManualInput() {
   const fetchManualData = async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/data/manual`);
-      setManualData(response.data);
+      // Ensure the response data is an array
+      const data = Array.isArray(response.data) ? response.data : [];
+      setManualData(data);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty array on error to prevent .map() issues
+      setManualData([]);
     }
   };
 
@@ -160,7 +165,7 @@ function ManualInput() {
                 </tr>
               </thead>
               <tbody>
-                {manualData.map((row, index) => (
+                {Array.isArray(manualData) && manualData.map((row, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="p-3 text-left border-b border-gray-300">{row.Region}</td>
                     <td className="p-3 text-left border-b border-gray-300">{row.Spill_Count}</td>
