@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { register, login } = require('./controllers/authController');
+const { authenticateToken } = require('./middleware/auth');
 
 dotenv.config();
 
@@ -16,6 +18,22 @@ app.use(express.urlencoded({ extended: true }));
 mongoose.connect(process.env.MONGO_DB_URI || 'mongodb://localhost:27017/oilspill')
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
+// Auth Routes
+app.post('/api/auth/register', (req, res) => {
+  console.log('Register request received:', req.body);
+  register(req, res);
+});
+
+app.post('/api/auth/login', (req, res) => {
+  console.log('Login request received:', req.body);
+  login(req, res);
+});
+
+// Protected route example
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ message: 'Protected data', user: req.user });
+});
 
 // Basic Route
 app.get('/', (req, res) => {

@@ -1,24 +1,33 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
+    if (path === '/home') {
+      return location.pathname === '/home';
     }
     return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Trigger auth change event
+    window.dispatchEvent(new Event('authChange'));
+    navigate('/');
   };
 
   return (
     <nav className="bg-slate-800 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-lg">
       <div className="text-white text-2xl font-bold">🌊 Oil Spill Event Prediction</div>
-      <div className="flex gap-8">
+      <div className="flex gap-8 items-center">
         <Link 
-          to="/" 
+          to="/home" 
           className={`text-white no-underline transition-colors duration-300 hover:text-blue-400 ${
-            isActive('/') ? 'text-blue-400 font-semibold' : ''
+            isActive('/home') ? 'text-blue-400 font-semibold' : ''
           }`}
         >
           Home
@@ -47,6 +56,12 @@ function Navbar() {
         >
           Dashboard
         </Link>
+        <button
+          onClick={handleLogout}
+          className="text-white no-underline transition-colors duration-300 hover:text-red-400 bg-transparent border-none cursor-pointer"
+        >
+          Logout
+        </button>
       </div>
     </nav>
   );
