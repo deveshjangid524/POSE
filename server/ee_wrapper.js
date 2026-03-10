@@ -117,6 +117,23 @@ class EarthEngineAPI {
       throw error;
     }
   }
+
+  async getSentinel1Data() {
+    try {
+      console.log('🛰️ Fetching latest Sentinel-1 data...');
+      const result = await this.executePythonCommand(['sentinel1']);
+      
+      if (result.success) {
+        console.log('✅ Sentinel-1 data retrieved successfully!');
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch Sentinel-1 data:', error.message);
+      throw error;
+    }
+  }
 }
 
 // Test function

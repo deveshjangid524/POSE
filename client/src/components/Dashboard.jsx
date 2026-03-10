@@ -7,6 +7,7 @@ import ROIMap from './ROIMap';
 import BackscatterPreview from './BackscatterPreview';
 import BackscatterUpload from './BackscatterUpload';
 import SentinelFilter from './SentinelFilter';
+import Sentinel1Data from './Sentinel1Data';
 import DataAnalysis from './DataAnalysis';
 
 function Dashboard() {
@@ -79,6 +80,13 @@ function Dashboard() {
             >
               📊 Data Analysis
             </div>
+
+            <div 
+              className={`p-4 cursor-pointer transition-colors duration-300 border-l-4 border-transparent hover:bg-slate-700 ${activeTab === 'sentinel1' ? 'bg-blue-500 border-l-white' : ''}`}
+              onClick={() => handleTabClick('sentinel1', '/dashboard/sentinel1')}
+            >
+              🛰️ Sentinel-1
+            </div>
           </div>
         </div>
 
@@ -93,6 +101,7 @@ function Dashboard() {
             <Route path="/backscatter-upload" element={<BackscatterUpload />} />
             <Route path="/sentinel-filter" element={<SentinelFilter />} />
             <Route path="/analysis" element={<DataAnalysis />} />
+            <Route path="/sentinel1" element={<Sentinel1Data />} />
           </Routes>
         </div>
       </div>

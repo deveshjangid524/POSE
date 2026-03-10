@@ -167,14 +167,6 @@ def get_sentinel1_data():
             }
             first_5_images.append(image_data)
         
-        # Print to console
-        print("=== SENTINEL-1 SATELLITE DATA - FIRST 5 ROWS ===")
-        for img in first_5_images:
-            print(f"\nImage {img['index']}:")
-            print(f"  ID: {img['id']}")
-            print(f"  Bands: {', '.join(img['bands'])}")
-            print(f"  Properties: {img['properties']}")
-        
         return {
             "success": True,
             "data": {

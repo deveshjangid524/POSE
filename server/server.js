@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { register, login } = require('./controllers/authController');
 const { authenticateToken } = require('./middleware/auth');
+const EarthEngineAPI = require('./ee_wrapper');
 
 dotenv.config();
 
@@ -49,6 +50,27 @@ app.post('/api/data/manual', (req, res) => {
     data: newData,
     timestamp: new Date()
   });
+});
+
+// Sentinel-1 data endpoint
+app.get('/api/sentinel1/latest', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching latest Sentinel-1 data...');
+    const eeAPI = new EarthEngineAPI();
+    const sentinelData = await eeAPI.getSentinel1Data();
+    res.json({
+      success: true,
+      data: sentinelData,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error fetching Sentinel-1 data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch Sentinel-1 data',
+      error: error.message
+    });
+  }
 });
 
 // Start Server
