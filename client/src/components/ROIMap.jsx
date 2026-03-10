@@ -17,13 +17,18 @@ function ROIMap() {
   const fetchData = async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/data/all`);
-      setData(response.data);
+      // Ensure the response data is an array
+      const dataArray = Array.isArray(response.data) ? response.data : [];
+      setData(dataArray);
       
       // Extract unique regions
-      const uniqueRegions = ['All', ...new Set(response.data.map(item => item.Region))];
+      const uniqueRegions = ['All', ...new Set(dataArray.map(item => item.Region))];
       setRegions(uniqueRegions);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty arrays on error to prevent .map() and .filter() issues
+      setData([]);
+      setRegions(['All']);
     }
   };
 
@@ -42,11 +47,11 @@ function ROIMap() {
     }
   };
 
-  const filteredData = data.filter(item => {
+  const filteredData = Array.isArray(data) ? data.filter(item => {
     const matchesRegion = regionFilter === 'All' || item.Region === regionFilter;
     const matchesSpill = item.Spill_Count >= spillFilter;
     return matchesRegion && matchesSpill;
-  });
+  }) : [];
 
   return (
     <div className="bg-white p-8 rounded-lg">
@@ -64,7 +69,7 @@ function ROIMap() {
               onChange={(e) => setRegionFilter(e.target.value)}
               className="w-full p-2 mt-2 bg-slate-300"
             >
-              {regions.map(region => (
+              {Array.isArray(regions) && regions.map(region => (
                 <option key={region} value={region}>{region}</option>
               ))}
             </select>
@@ -118,7 +123,7 @@ function ROIMap() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              {filteredData.map((item, index) => (
+              {Array.isArray(filteredData) && filteredData.map((item, index) => (
                 <CircleMarker
                   key={index}
                   center={[item.Lat, item.Lon]}

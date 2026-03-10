@@ -15,25 +15,29 @@ function DataAnalysis() {
   const fetchData = async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/data/all`);
-      setData(response.data);
+      // Ensure the response data is an array
+      const dataArray = Array.isArray(response.data) ? response.data : [];
+      setData(dataArray);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty array on error to prevent .map() and .filter() issues
+      setData([]);
     }
   };
 
-  const filteredData = data.filter(item => {
+  const filteredData = Array.isArray(data) ? data.filter(item => {
     const matchesRegion = regionFilter === 'All' || item.Region === regionFilter;
     const matchesSpill = item.Spill_Count >= spillFilter;
     return matchesRegion && matchesSpill;
-  });
+  }) : [];
 
-  const chartData = filteredData.map(item => ({
+  const chartData = Array.isArray(filteredData) ? filteredData.map(item => ({
     region: item.Region,
     spillCount: item.Spill_Count
-  }));
+  })) : [];
 
   const getSummaryStats = () => {
-    if (filteredData.length === 0) return null;
+    if (!Array.isArray(filteredData) || filteredData.length === 0) return null;
 
     const totalSpills = filteredData.reduce((sum, item) => sum + item.Spill_Count, 0);
     const avgSpills = (totalSpills / filteredData.length).toFixed(2);
@@ -109,7 +113,7 @@ function DataAnalysis() {
             <label className="block mb-2 font-medium">Filter by Region:</label>
             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
               <option value="All">All</option>
-              {[...new Set(data.map(item => item.Region))].map(region => (
+              {Array.isArray(data) && [...new Set(data.map(item => item.Region))].map(region => (
                 <option key={region} value={region}>{region}</option>
               ))}
             </select>
@@ -143,7 +147,7 @@ function DataAnalysis() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((item, index) => (
+              {Array.isArray(filteredData) && filteredData.map((item, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="p-3 text-left border-b border-gray-300">{item.Region}</td>
                   <td className="p-3 text-left border-b border-gray-300">{item.Spill_Count}</td>
