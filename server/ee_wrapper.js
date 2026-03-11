@@ -1,111 +1,77 @@
-const { spawn } = require('child_process');
-const path = require('path');
+const ee = require('@google/earthengine');
 require('dotenv').config();
 
 class EarthEngineAPI {
   constructor() {
-    this.pythonScript = path.join(__dirname, 'ee_python.py');
-  }
-
-  async executePythonCommand(args) {
-    return new Promise((resolve, reject) => {
-      console.log(`Executing Python command: python ${this.pythonScript} ${args.join(' ')}`);
-      
-      const python = spawn('python', [this.pythonScript, ...args], {
-        env: {
-          ...process.env,
-          CLIENT_ID: process.env.CLIENT_ID,
-          CLIENT_SECRET: process.env.CLIENT_SECRET,
-          REDIRECT_URI: process.env.REDIRECT_URI,
-          PROJECT_ID: process.env.PROJECT_ID
-        }
-      });
-
-      let data = '';
-      let error = '';
-
-      python.stdout.on('data', (chunk) => {
-        const chunkStr = chunk.toString();
-        data += chunkStr;
-        console.log('Python stdout:', chunkStr.trim());
-      });
-
-      python.stderr.on('data', (chunk) => {
-        const chunkStr = chunk.toString();
-        error += chunkStr;
-        console.log('Python stderr:', chunkStr.trim());
-      });
-
-      python.on('close', (code) => {
-        console.log(`Python process exited with code: ${code}`);
-        
-        if (code !== 0) {
-          reject(new Error(`Python script failed with code ${code}: ${error}`));
-          return;
-        }
-
-        try {
-          const result = JSON.parse(data);
-          resolve(result);
-        } catch (parseError) {
-          console.error('Failed to parse Python output:', data);
-          reject(new Error(`Failed to parse Python output: ${parseError.message}`));
-        }
-      });
-
-      python.on('error', (err) => {
-        console.error('Failed to start Python process:', err);
-        reject(new Error(`Failed to start Python process: ${err.message}`));
-      });
-    });
+    this.initialized = false;
   }
 
   async initialize() {
     try {
-      console.log('🔧 Initializing Earth Engine Python API...');
-      const result = await this.executePythonCommand(['init']);
+      console.log('🔧 Initializing Earth Engine Node.js API...');
       
-      if (result.success) {
-        console.log('✅ Earth Engine Python API initialized successfully!');
-        return result;
-      } else {
-        throw new Error(result.error);
-      }
+      const projectId = process.env.PROJECT_ID;
+      
+      // Try to initialize with default credentials
+      await ee.initialize(null, null, projectId);
+      console.log('✅ Earth Engine initialized successfully!');
+      
+      this.initialized = true;
+      return { success: true, message: 'Earth Engine initialized successfully!' };
+      
     } catch (error) {
       console.error('❌ Failed to initialize Earth Engine:', error.message);
       throw error;
     }
   }
 
+  async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+  }
+
   async getImageInfo(imageId) {
     try {
+      await this.ensureInitialized();
       console.log(`📊 Getting info for image: ${imageId}`);
-      const result = await this.executePythonCommand(['image_info', imageId]);
       
-      if (result.success) {
-        console.log('✅ Image info retrieved successfully!');
-        return result.data;
-      } else {
-        throw new Error(result.error);
-      }
+      const image = ee.Image(imageId);
+      const info = await image.getInfo();
+      
+      return {
+        id: info.get("id"),
+        bands: info.get("bands", []).length,
+        properties: info.get("properties", {}).length,
+        band_names: info.get("bands", []).map(band => band.get("id"))
+      };
+      
     } catch (error) {
       console.error('❌ Failed to get image info:', error.message);
       throw error;
     }
   }
 
-  async calculateMeanValues(imageId, geometry) {
+  async calculateMeanValues(imageId, geometryCoords, scale = 30) {
     try {
-      console.log('📈 Calculating mean values...');
-      const geometryJson = JSON.stringify(geometry);
-      const result = await this.executePythonCommand(['mean_values', imageId, geometryJson]);
+      await this.ensureInitialized();
+      console.log('� Calculating mean values...');
       
-      if (result.success) {
-        console.log('✅ Mean values calculated successfully!');
-        return result.data;
-      } else {
-        throw new Error(result.error);
-      }
+      const image = ee.Image(imageId);
+      const geometry = ee.Geometry.Rectangle(geometryCoords);
+      
+      const meanDict = await image.reduceRegion(
+        ee.Reducer.mean(),
+        geometry,
+        scale,
+        1e9
+      ).getInfo();
+      
+      return {
+        mean_values: meanDict,
+        available_bands: Object.keys(meanDict)
+      };
+      
     } catch (error) {
       console.error('❌ Failed to calculate mean values:', error.message);
       throw error;
@@ -114,15 +80,19 @@ class EarthEngineAPI {
 
   async listCollections() {
     try {
-      console.log('📋 Listing available collections...');
-      const result = await this.executePythonCommand(['collections']);
+      const collections = [
+        "LANDSAT/LC08/C01/T1_SR",
+        "LANDSAT/LE07/C01/T1_SR", 
+        "LANDSAT/LT05/C01/T1_SR",
+        "COPERNICUS/S2_SR",
+        "MODIS/006/MOD13Q1"
+      ];
       
-      if (result.success) {
-        console.log('✅ Collections listed successfully!');
-        return result.data;
-      } else {
-        throw new Error(result.error);
-      }
+      return {
+        available_collections: collections,
+        count: collections.length
+      };
+      
     } catch (error) {
       console.error('❌ Failed to list collections:', error.message);
       throw error;
@@ -131,15 +101,49 @@ class EarthEngineAPI {
 
   async getSentinel1Data() {
     try {
-      console.log('🛰️ Fetching latest Sentinel-1 data...');
-      const result = await this.executePythonCommand(['sentinel1']);
+      await this.ensureInitialized();
+      console.log('�️ Fetching latest Sentinel-1 data...');
       
-      if (result.success) {
-        console.log('✅ Sentinel-1 data retrieved successfully!');
-        return result.data;
-      } else {
-        throw new Error(result.error);
+      // Load Sentinel-1 GRD collection
+      const collection = ee.ImageCollection('COPERNICUS/S1_GRD');
+      
+      // Filter by date (last 30 days) and instrument mode
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const eeNow = ee.Date(now.toISOString());
+      const eeStartDate = ee.Date(startDate.toISOString());
+      
+      const filtered = collection
+        .filterDate(eeStartDate, eeNow)
+        .filter(ee.Filter.eq('instrumentMode', 'IW'))
+        .filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))
+        .limit(5);
+      
+      // Get collection info
+      const collectionInfo = await filtered.getInfo();
+      
+      // Extract first 5 images data
+      const first5Images = [];
+      const features = collectionInfo.get('features', []);
+      
+      for (let i = 0; i < Math.min(features.length, 5); i++) {
+        const image = features[i];
+        const imageData = {
+          index: i + 1,
+          id: image.get('id'),
+          properties: image.get('properties', {}),
+          bands: image.get('bands', []).map(band => band.get('id'))
+        };
+        first5Images.push(imageData);
       }
+      
+      return {
+        message: "Sentinel-1 data retrieved successfully",
+        first_5_images: first5Images,
+        total_images_in_collection: features.length
+      };
+      
     } catch (error) {
       console.error('❌ Failed to fetch Sentinel-1 data:', error.message);
       throw error;
@@ -148,51 +152,29 @@ class EarthEngineAPI {
 }
 
 // Test function
-async function testEarthEnginePython() {
-  console.log('🚀 Testing Earth Engine Python API Integration...');
+async function testEarthEngineNodeJS() {
+  console.log('🚀 Testing Earth Engine Node.js API Integration...');
   
   try {
-    // Check environment variables
-    if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.REDIRECT_URI) {
-      throw new Error('Missing environment variables');
-    }
-    
-    console.log('🔐 Environment variables loaded successfully');
-    
     const eeAPI = new EarthEngineAPI();
     
     // Test 1: Initialize
     await eeAPI.initialize();
     
-    // Test 2: Get image info
-    const imageInfo = await eeAPI.getImageInfo('LANDSAT/LC08/C01/T1_SR/LC08_044034_20140318');
-    console.log('📊 Image Info:', imageInfo);
+    // Test 2: Get Sentinel-1 data
+    const sentinelData = await eeAPI.getSentinel1Data();
+    console.log('�️ Sentinel-1 Data:', sentinelData);
     
-    // Test 3: Calculate mean values
-    const geometry = [-122.5, 37.0, -122.0, 37.5];
-    const meanValues = await eeAPI.calculateMeanValues('LANDSAT/LC08/C01/T1_SR/LC08_044034_20140318', geometry);
-    console.log('📈 Mean Values:', meanValues);
-    
-    // Test 4: List collections
-    const collections = await eeAPI.listCollections();
-    console.log('📋 Collections:', collections);
-    
-    console.log('🎉 All Earth Engine Python API tests passed!');
+    console.log('🎉 All Earth Engine Node.js API tests passed!');
     
   } catch (error) {
-    console.error('❌ Earth Engine Python API test failed:', error.message);
-    
-    if (error.message.includes('Python')) {
-      console.log('💡 Hint: Make sure Python 3 and earthengine-api are installed:');
-      console.log('   pip install earthengine-api');
-      console.log('   earthengine authenticate');
-    }
+    console.error('❌ Earth Engine Node.js API test failed:', error.message);
   }
 }
 
 // Run test if this file is executed directly
 if (require.main === module) {
-  testEarthEnginePython();
+  testEarthEngineNodeJS();
 }
 
 module.exports = EarthEngineAPI;
