@@ -58,11 +58,7 @@ app.get('/api/sentinel1/latest', async (req, res) => {
     console.log('Fetching latest Sentinel-1 data...');
     const eeAPI = new EarthEngineAPI();
     const sentinelData = await eeAPI.getSentinel1Data();
-    res.json({
-      success: true,
-      data: sentinelData,
-      timestamp: new Date()
-    });
+    res.json(sentinelData);
   } catch (error) {
     console.error('Error fetching Sentinel-1 data:', error);
     res.status(500).json({

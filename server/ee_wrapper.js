@@ -8,29 +8,24 @@ class EarthEngineAPI {
 
   async initialize() {
     try {
-      console.log('🔧 Initializing Earth Engine with OAuth2...');
+      console.log('🔧 Initializing Earth Engine with Service Account...');
       
-      const projectId = process.env.PROJECT_ID;
-      const clientId = process.env.CLIENT_ID;
-      const clientSecret = process.env.CLIENT_SECRET;
-      const redirectUri = process.env.REDIRECT_URI;
+      const credentials = JSON.parse(process.env.EE_SERVICE_ACCOUNT);
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
       
-      if (!clientId || !clientSecret || !redirectUri) {
-        throw new Error('Missing OAuth2 credentials: CLIENT_ID, CLIENT_SECRET, REDIRECT_URI');
-      }
-      
-      // For production, you'd need to implement OAuth2 flow
-      // For now, try default authentication
-      console.log('🔓 Attempting default authentication...');
-      await ee.initialize(null, null, projectId);
-      console.log('✅ Earth Engine initialized successfully!');
-      
-      this.initialized = true;
-      return { success: true, message: 'Earth Engine initialized successfully!' };
+      return new Promise((resolve, reject) => {
+        ee.data.authenticateViaPrivateKey(credentials, () => {
+          ee.initialize(null, null, async () => {
+            console.log("✅ Earth Engine initialized successfully!");
+            this.initialized = true;
+            resolve({ success: true, message: 'Earth Engine initialized successfully!' });
+          });
+        });
+      });
       
     } catch (error) {
       console.error('❌ Failed to initialize Earth Engine:', error.message);
-      console.error('💡 For production, implement OAuth2 flow or use service account');
+      console.error('💡 Make sure EE_SERVICE_ACCOUNT environment variable is set');
       throw error;
     }
   }
@@ -124,6 +119,8 @@ class EarthEngineAPI {
       const eeNow = ee.Date(now.toISOString());
       const eeStartDate = ee.Date(startDate.toISOString());
       
+      console.log(`📅 Filtering from ${startDate.toISOString().split('T')[0]} to ${now.toISOString().split('T')[0]}`);
+      
       const filtered = collection
         .filterDate(eeStartDate, eeNow)
         .filter(ee.Filter.eq('instrumentMode', 'IW'))
@@ -133,26 +130,38 @@ class EarthEngineAPI {
       // Get collection info
       const collectionInfo = await filtered.getInfo();
       
-      // Extract first 5 images data
-      const first5Images = [];
-      const features = collectionInfo.get('features', []);
+      console.log(`📊 Found ${collectionInfo.features.length} Sentinel-1 images`);
       
-      for (let i = 0; i < Math.min(features.length, 5); i++) {
-        const image = features[i];
+      // Extract and display first 5 images data
+      const first5Images = [];
+      for (let i = 0; i < Math.min(collectionInfo.features.length, 5); i++) {
+        const image = collectionInfo.features[i];
         const imageData = {
           index: i + 1,
-          id: image.get('id'),
-          properties: image.get('properties', {}),
-          bands: image.get('bands', []).map(band => band.get('id'))
+          id: image.id,
+          properties: image.properties,
+          bands: image.bands.map(band => band.id)
         };
         first5Images.push(imageData);
+        
+        console.log(`📸 Image ${i + 1}:`);
+        console.log(`   ID: ${image.id}`);
+        console.log(`   Date: ${image.properties.system_time_start || 'N/A'}`);
+        console.log(`   Polarization: ${image.properties.polarization || 'N/A'}`);
+        console.log(`   Instrument Mode: ${image.properties.instrumentMode || 'N/A'}`);
+        console.log(`   Orbit Pass: ${image.properties.orbitProperties_pass || 'N/A'}`);
+        console.log(`   Available Bands: ${image.bands.map(band => band.id).join(', ')}`);
       }
       
-      return {
+      const result = {
+        success: true,
         message: "Sentinel-1 data retrieved successfully",
         first_5_images: first5Images,
-        total_images_in_collection: features.length
+        total_images_in_collection: collectionInfo.features.length
       };
+      
+      console.log('✅ Sentinel-1 data retrieval completed!');
+      return result;
       
     } catch (error) {
       console.error('❌ Failed to fetch Sentinel-1 data:', error.message);

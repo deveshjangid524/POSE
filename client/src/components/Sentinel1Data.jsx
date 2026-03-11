@@ -13,8 +13,8 @@ function Sentinel1Data() {
     setError('');
     try {
       const response = await API.get('/api/sentinel1/latest');
-      setSentinelData(response.data.data);
-      console.log('Sentinel-1 data fetched:', response.data.data);
+      setSentinelData(response.data);
+      console.log('Sentinel-1 data fetched:', response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch Sentinel-1 data');
       console.error('Error fetching Sentinel-1 data:', err);
