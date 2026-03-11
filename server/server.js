@@ -52,8 +52,8 @@ app.post('/api/data/manual', (req, res) => {
   });
 });
 
-// Sentinel-1 data endpoint
-app.get('/api/sentinel1/latest', authenticateToken, async (req, res) => {
+// Sentinel-1 data endpoint (optional authentication)
+app.get('/api/sentinel1/latest', async (req, res) => {
   try {
     console.log('Fetching latest Sentinel-1 data...');
     const eeAPI = new EarthEngineAPI();

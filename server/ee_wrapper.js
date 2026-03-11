@@ -9,12 +9,15 @@ class EarthEngineAPI {
 
   async executePythonCommand(args) {
     return new Promise((resolve, reject) => {
+      console.log(`Executing Python command: python ${this.pythonScript} ${args.join(' ')}`);
+      
       const python = spawn('python', [this.pythonScript, ...args], {
         env: {
           ...process.env,
           CLIENT_ID: process.env.CLIENT_ID,
           CLIENT_SECRET: process.env.CLIENT_SECRET,
-          REDIRECT_URI: process.env.REDIRECT_URI
+          REDIRECT_URI: process.env.REDIRECT_URI,
+          PROJECT_ID: process.env.PROJECT_ID
         }
       });
 
@@ -22,14 +25,20 @@ class EarthEngineAPI {
       let error = '';
 
       python.stdout.on('data', (chunk) => {
-        data += chunk.toString();
+        const chunkStr = chunk.toString();
+        data += chunkStr;
+        console.log('Python stdout:', chunkStr.trim());
       });
 
       python.stderr.on('data', (chunk) => {
-        error += chunk.toString();
+        const chunkStr = chunk.toString();
+        error += chunkStr;
+        console.log('Python stderr:', chunkStr.trim());
       });
 
       python.on('close', (code) => {
+        console.log(`Python process exited with code: ${code}`);
+        
         if (code !== 0) {
           reject(new Error(`Python script failed with code ${code}: ${error}`));
           return;
@@ -39,11 +48,13 @@ class EarthEngineAPI {
           const result = JSON.parse(data);
           resolve(result);
         } catch (parseError) {
+          console.error('Failed to parse Python output:', data);
           reject(new Error(`Failed to parse Python output: ${parseError.message}`));
         }
       });
 
       python.on('error', (err) => {
+        console.error('Failed to start Python process:', err);
         reject(new Error(`Failed to start Python process: ${err.message}`));
       });
     });

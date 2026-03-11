@@ -130,13 +130,21 @@ def get_sentinel1_data():
         # Get project ID from environment variables
         project_id = os.getenv('PROJECT_ID')
         
+        # Print debug info to stderr instead of stdout
+        print(f"Project ID from env: {project_id}", file=sys.stderr)
+        
         # Initialize Earth Engine with project
         if project_id:
+            print(f"Initializing Earth Engine with project: {project_id}", file=sys.stderr)
             ee.Initialize(project=project_id)
         else:
+            print("Initializing Earth Engine without project", file=sys.stderr)
             ee.Initialize()
         
+        print("Earth Engine initialized successfully", file=sys.stderr)
+        
         # Load Sentinel-1 GRD collection
+        print("Loading Sentinel-1 GRD collection...", file=sys.stderr)
         collection = ee.ImageCollection('COPERNICUS/S1_GRD')
         
         # Filter by date (last 30 days) and instrument mode
@@ -144,17 +152,23 @@ def get_sentinel1_data():
         now = datetime.now()
         start_date = now - timedelta(days=30)
         
+        print(f"Filtering from {start_date.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}", file=sys.stderr)
+        
         # Convert to Earth Engine dates
         ee_now = ee.Date(now.strftime('%Y-%m-%d'))
         ee_start_date = ee.Date(start_date.strftime('%Y-%m-%d'))
         
+        print("Applying filters...", file=sys.stderr)
         filtered = collection.filterDate(ee_start_date, ee_now)\
                             .filter(ee.Filter.eq('instrumentMode', 'IW'))\
                             .filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))\
                             .limit(5)
         
+        print("Getting collection info...", file=sys.stderr)
         # Get collection info
         collection_info = filtered.getInfo()
+        
+        print(f"Found {len(collection_info.get('features', []))} images", file=sys.stderr)
         
         # Extract first 5 images data
         first_5_images = []
@@ -167,17 +181,24 @@ def get_sentinel1_data():
             }
             first_5_images.append(image_data)
         
-        return {
+        result = {
             "success": True,
             "data": {
                 "message": "Sentinel-1 data retrieved successfully",
                 "first_5_images": first_5_images,
-                "total_images_in_collection": collection_info.get('features', []).__len__()
+                "total_images_in_collection": len(collection_info.get('features', []))
             }
         }
         
+        # Only print JSON to stdout
+        print(json.dumps(result))
+        
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error in get_sentinel1_data: {str(e)}", file=sys.stderr)
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}", file=sys.stderr)
+        error_result = {"error": str(e)}
+        print(json.dumps(error_result))
 
 def main():
     """Main function to handle command line arguments"""
@@ -189,6 +210,7 @@ def main():
     
     if command == "init":
         result = initialize_earth_engine()
+        print(json.dumps(result, indent=2))
         
     elif command == "image_info":
         if len(sys.argv) < 3:
@@ -196,6 +218,7 @@ def main():
             return
         image_id = sys.argv[2]
         result = get_image_info(image_id)
+        print(json.dumps(result, indent=2))
         
     elif command == "mean_values":
         if len(sys.argv) < 4:
@@ -205,19 +228,21 @@ def main():
         try:
             coords = json.loads(sys.argv[3])
             result = calculate_mean_values(image_id, coords)
+            print(json.dumps(result, indent=2))
         except json.JSONDecodeError:
             result = {"error": "Invalid geometry coordinates"}
+            print(json.dumps(result, indent=2))
             
     elif command == "collections":
         result = list_collections()
+        print(json.dumps(result, indent=2))
         
     elif command == "sentinel1":
         result = get_sentinel1_data()
         
     else:
         result = {"error": f"Unknown command: {command}"}
-    
-    print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2))
 
 if __name__ == "__main__":
     main()
