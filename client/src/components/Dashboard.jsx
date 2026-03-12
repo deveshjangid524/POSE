@@ -13,10 +13,17 @@ import DataAnalysis from './DataAnalysis';
 function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('upload');
+  const [aoiMetrics, setAoiMetrics] = useState(null);
 
   const handleTabClick = (tab, path) => {
     setActiveTab(tab);
     navigate(path);
+  };
+
+  const handleAoiDataFetched = (metrics) => {
+    setAoiMetrics(metrics);
+    setActiveTab('analysis');
+    navigate('/dashboard/analysis');
   };
 
   return (
@@ -100,8 +107,8 @@ function Dashboard() {
             <Route path="/backscatter-preview" element={<BackscatterPreview />} />
             <Route path="/backscatter-upload" element={<BackscatterUpload />} />
             <Route path="/sentinel-filter" element={<SentinelFilter />} />
-            <Route path="/analysis" element={<DataAnalysis />} />
-            <Route path="/sentinel1" element={<Sentinel1AOI />} />
+            <Route path="/analysis" element={<DataAnalysis aoiMetrics={aoiMetrics} />} />
+            <Route path="/sentinel1" element={<Sentinel1AOI onDataFetched={handleAoiDataFetched} />} />
           </Routes>
         </div>
       </div>

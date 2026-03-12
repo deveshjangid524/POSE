@@ -3,10 +3,57 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import axios from 'axios';
 
-function DataAnalysis() {
+function DataAnalysis({ aoiMetrics }) {
   const [data, setData] = useState([]);
   const [regionFilter, setRegionFilter] = useState('All');
   const [spillFilter, setSpillFilter] = useState(0);
+
+  const computeOilSpillProbability = () => {
+    const dm = aoiMetrics?.derived_metrics;
+    if (!dm) return null;
+
+    const vvMean = typeof dm.mean_backscatter === 'number' ? dm.mean_backscatter : null;
+    const vvStd = typeof dm.std_backscatter === 'number' ? dm.std_backscatter : null;
+    const oilAreaKm2 = typeof dm.oil_area_km2 === 'number' ? dm.oil_area_km2 : 0;
+    const contrast = typeof dm.texture_contrast === 'number' ? dm.texture_contrast : null;
+    const homogeneity = typeof dm.texture_homogeneity === 'number' ? dm.texture_homogeneity : null;
+
+    if (vvMean == null) return null;
+
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
+    const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+
+    const backscatterScore = clamp01((-17 - vvMean) / 8);
+    const stdScore = vvStd == null ? 0.5 : clamp01((2.0 - vvStd) / 2.0);
+    const areaScore = clamp01(oilAreaKm2 / 2.0);
+    const contrastScore = contrast == null ? 0.5 : clamp01((0.8 - contrast) / 0.8);
+    const homogeneityScore = homogeneity == null ? 0.5 : clamp01(homogeneity / 2.0);
+
+    const logit =
+      -1.2 +
+      2.2 * backscatterScore +
+      1.0 * areaScore +
+      0.6 * stdScore +
+      0.4 * contrastScore +
+      0.4 * homogeneityScore;
+
+    const probability = clamp01(sigmoid(logit));
+    const isOilSpill = probability >= 0.5;
+
+    return {
+      probability,
+      isOilSpill,
+      features: {
+        mean_backscatter: vvMean,
+        std_backscatter: vvStd,
+        oil_area_km2: oilAreaKm2,
+        texture_contrast: contrast,
+        texture_homogeneity: homogeneity
+      }
+    };
+  };
+
+  const aoiAnalysis = computeOilSpillProbability();
 
   useEffect(() => {
     fetchData();
@@ -52,6 +99,36 @@ function DataAnalysis() {
   return (
     <div className="bg-white p-8 rounded-lg">
       <h2>📈 Data Analysis</h2>
+
+      {aoiMetrics && (
+        <div className="bg-gray-50 p-6 rounded-lg mt-6">
+          <h3 className="text-lg font-medium mb-4">AOI Oil Spill Analysis</h3>
+
+          {!aoiAnalysis ? (
+            <p>AOI metrics received, but not enough fields are available to compute a probability.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="text-sm text-gray-700">Prediction</div>
+                <div className="text-xl font-semibold mt-1">
+                  {aoiAnalysis.isOilSpill ? 'Oil spill likely' : 'Oil spill unlikely'}
+                </div>
+                <div className="text-sm text-gray-700 mt-3">Probability</div>
+                <div className="text-lg font-medium mt-1">
+                  {(aoiAnalysis.probability * 100).toFixed(1)}%
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">AOI Features Used</div>
+                <div className="text-xs font-mono bg-white border border-gray-200 rounded-lg p-3 overflow-auto max-h-[180px]">
+                  {JSON.stringify(aoiAnalysis.features, null, 2)}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 2fr gap-8 mt-6">
         {/* Summary Stats */}

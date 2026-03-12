@@ -43,9 +43,13 @@ class EarthEngineAPI {
     orbitPass = 'DESCENDING',
     instrumentMode = 'IW',
     polarization = 'VV',
-    scale = 10,
+    scale = 30,
     textureSize = 3,
-    oilThresholdDb = -20
+    oilThresholdDb = -20,
+    fastMode = true,
+    includeDistributions = false,
+    textureScale = 120,
+    oilAreaScale = 60
   }) {
     try {
       await this.ensureInitialized();
@@ -59,7 +63,10 @@ class EarthEngineAPI {
         throw new Error('Invalid geojson: missing geometry');
       }
 
-      const aoi = ee.Geometry(geometryInput);
+      let aoi = ee.Geometry(geometryInput);
+      if (fastMode) {
+        aoi = aoi.simplify(30);
+      }
 
       const now = new Date();
       const defaultEndDate = now.toISOString();
@@ -96,23 +103,30 @@ class EarthEngineAPI {
         };
       }
 
-      const image = collection
-        .select([polarization])
-        .median()
-        .clip(aoi);
+      const base = ee.Image(
+        collection
+          .sort('system:time_start', false)
+          .first()
+      )
+        .select([polarization]);
+
+      const image = base.clip(aoi);
 
       const meanStdReducer = ee.Reducer.mean().combine({
         reducer2: ee.Reducer.stdDev(),
         sharedInputs: true
       });
 
-      const vvStats = await image.reduceRegion({
-        reducer: meanStdReducer,
-        geometry: aoi,
-        scale,
-        maxPixels: 1e9,
-        bestEffort: true
-      }).getInfo();
+      const vvStats = await image
+        .reduceRegion({
+          reducer: meanStdReducer,
+          geometry: aoi,
+          scale,
+          maxPixels: 1e8,
+          bestEffort: true,
+          tileScale: 4
+        })
+        .getInfo();
 
       const vvBandName = polarization;
       const meanKey = `${vvBandName}_mean`;
@@ -121,52 +135,72 @@ class EarthEngineAPI {
       const vvMean = vvStats ? vvStats[meanKey] : null;
       const vvStd = vvStats ? vvStats[stdKey] : null;
 
-      const vvPercentiles = await image.reduceRegion({
-        reducer: ee.Reducer.percentile([5, 25, 50, 75, 95]),
-        geometry: aoi,
-        scale,
-        maxPixels: 1e9,
-        bestEffort: true
-      }).getInfo();
+      const vvPercentiles = includeDistributions
+        ? await image
+            .reduceRegion({
+              reducer: ee.Reducer.percentile([5, 25, 50, 75, 95]),
+              geometry: aoi,
+              scale,
+              maxPixels: 1e9,
+              bestEffort: true
+            })
+            .getInfo()
+        : null;
 
-      const vvHistogram = await image.reduceRegion({
-        reducer: ee.Reducer.histogram({ maxBuckets: 64 }),
-        geometry: aoi,
-        scale,
-        maxPixels: 1e9,
-        bestEffort: true
-      }).getInfo();
+      const vvHistogram = includeDistributions
+        ? await image
+            .reduceRegion({
+              reducer: ee.Reducer.histogram({ maxBuckets: 64 }),
+              geometry: aoi,
+              scale,
+              maxPixels: 1e9,
+              bestEffort: true
+            })
+            .getInfo()
+        : null;
 
       const vvForTexture = image.select([vvBandName]).multiply(10).toInt();
       const texture = vvForTexture.glcmTexture({ size: textureSize });
       const contrastBand = texture.select([`${vvBandName}_contrast`]);
       const homogeneityBand = texture.select([`${vvBandName}_idm`]);
 
-      const textureStats = await ee.Image.cat([contrastBand, homogeneityBand])
-        .reduceRegion({
-          reducer: ee.Reducer.mean(),
-          geometry: aoi,
-          scale,
-          maxPixels: 1e9,
-          bestEffort: true
-        })
-        .getInfo();
+      let textureStats = null;
+      try {
+        textureStats = await ee.Image.cat([contrastBand, homogeneityBand])
+          .reduceRegion({
+            reducer: ee.Reducer.mean(),
+            geometry: aoi,
+            scale: fastMode ? textureScale : scale,
+            maxPixels: 1e8,
+            bestEffort: true,
+            tileScale: 4
+          })
+          .getInfo();
+      } catch (e) {
+        textureStats = null;
+      }
 
       const textureContrastMean = textureStats ? textureStats[`${vvBandName}_contrast_mean`] : null;
       const textureHomogeneityMean = textureStats ? textureStats[`${vvBandName}_idm_mean`] : null;
 
       const oilMask = image.select([vvBandName]).lt(oilThresholdDb);
       const pixelArea = ee.Image.pixelArea();
-      const oilAreaDict = await pixelArea
-        .updateMask(oilMask)
-        .reduceRegion({
-          reducer: ee.Reducer.sum(),
-          geometry: aoi,
-          scale,
-          maxPixels: 1e9,
-          bestEffort: true
-        })
-        .getInfo();
+      let oilAreaDict = null;
+      try {
+        oilAreaDict = await pixelArea
+          .updateMask(oilMask)
+          .reduceRegion({
+            reducer: ee.Reducer.sum(),
+            geometry: aoi,
+            scale: fastMode ? oilAreaScale : scale,
+            maxPixels: 1e8,
+            bestEffort: true,
+            tileScale: 4
+          })
+          .getInfo();
+      } catch (e) {
+        oilAreaDict = null;
+      }
 
       const oilAreaM2 = oilAreaDict ? oilAreaDict.area : null;
 
@@ -181,6 +215,10 @@ class EarthEngineAPI {
           scale,
           textureSize,
           oilThresholdDb,
+          fastMode,
+          includeDistributions,
+          textureScale: fastMode ? textureScale : scale,
+          oilAreaScale: fastMode ? oilAreaScale : scale,
           imageCount: count
         },
         derived_metrics: {

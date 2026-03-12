@@ -41,7 +41,7 @@ function AOISelector({ onAOIChange }) {
   return null;
 }
 
-function Sentinel1AOI() {
+function Sentinel1AOI({ onDataFetched }) {
   const [aoiPoints, setAoiPoints] = useState(null);
   const [error, setError] = useState('');
   const [fetchLoading, setFetchLoading] = useState(false);
@@ -84,12 +84,17 @@ function Sentinel1AOI() {
         polarization: 'VV',
         orbitPass: 'DESCENDING',
         instrumentMode: 'IW',
-        scale: 10,
+        scale: 30,
         textureSize: 3,
-        oilThresholdDb: -20
+        oilThresholdDb: -20,
+        fastMode: true,
+        includeDistributions: false
       });
 
       setFetchResult(res.data);
+      if (typeof onDataFetched === 'function') {
+        onDataFetched(res.data);
+      }
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || 'Failed to fetch AOI data');
     } finally {
