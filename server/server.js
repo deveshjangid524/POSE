@@ -52,18 +52,39 @@ app.post('/api/data/manual', (req, res) => {
   });
 });
 
-// Sentinel-1 data endpoint (optional authentication)
-app.get('/api/sentinel1/latest', async (req, res) => {
+app.post('/api/sentinel1/aoi-metrics', async (req, res) => {
   try {
-    console.log('Fetching latest Sentinel-1 data...');
+    const {
+      geojson,
+      startDate,
+      endDate,
+      orbitPass,
+      instrumentMode,
+      polarization,
+      scale,
+      textureSize,
+      oilThresholdDb
+    } = req.body || {};
+
     const eeAPI = new EarthEngineAPI();
-    const sentinelData = await eeAPI.getSentinel1Data();
-    res.json(sentinelData);
+    const metrics = await eeAPI.getSentinel1AoiMetrics({
+      geojson,
+      startDate,
+      endDate,
+      orbitPass,
+      instrumentMode,
+      polarization,
+      scale,
+      textureSize,
+      oilThresholdDb
+    });
+
+    res.json(metrics);
   } catch (error) {
-    console.error('Error fetching Sentinel-1 data:', error);
+    console.error('Error computing Sentinel-1 AOI metrics:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch Sentinel-1 data',
+      message: 'Failed to compute Sentinel-1 AOI metrics',
       error: error.message
     });
   }

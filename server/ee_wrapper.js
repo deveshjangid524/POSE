@@ -36,164 +36,174 @@ class EarthEngineAPI {
     }
   }
 
-  async getImageInfo(imageId) {
+  async getSentinel1AoiMetrics({
+    geojson,
+    startDate,
+    endDate,
+    orbitPass = 'DESCENDING',
+    instrumentMode = 'IW',
+    polarization = 'VV',
+    scale = 10,
+    textureSize = 3,
+    oilThresholdDb = -20
+  }) {
     try {
       await this.ensureInitialized();
-      console.log(`📊 Getting info for image: ${imageId}`);
-      
-      const image = ee.Image(imageId);
-      const info = await image.getInfo();
-      
-      return {
-        id: info.get("id"),
-        bands: info.get("bands", []).length,
-        properties: info.get("properties", {}).length,
-        band_names: info.get("bands", []).map(band => band.get("id"))
-      };
-      
-    } catch (error) {
-      console.error('❌ Failed to get image info:', error.message);
-      throw error;
-    }
-  }
 
-  async calculateMeanValues(imageId, geometryCoords, scale = 30) {
-    try {
-      await this.ensureInitialized();
-      console.log('📈 Calculating mean values...');
-      
-      const image = ee.Image(imageId);
-      const geometry = ee.Geometry.Rectangle(geometryCoords);
-      
-      const meanDict = await image.reduceRegion(
-        ee.Reducer.mean(),
-        geometry,
-        scale,
-        1e9
-      ).getInfo();
-      
-      return {
-        mean_values: meanDict,
-        available_bands: Object.keys(meanDict)
-      };
-      
-    } catch (error) {
-      console.error('❌ Failed to calculate mean values:', error.message);
-      throw error;
-    }
-  }
-
-  async listCollections() {
-    try {
-      const collections = [
-        "LANDSAT/LC08/C01/T1_SR",
-        "LANDSAT/LE07/C01/T1_SR", 
-        "LANDSAT/LT05/C01/T1_SR",
-        "COPERNICUS/S2_SR",
-        "MODIS/006/MOD13Q1"
-      ];
-      
-      return {
-        available_collections: collections,
-        count: collections.length
-      };
-      
-    } catch (error) {
-      console.error('❌ Failed to list collections:', error.message);
-      throw error;
-    }
-  }
-
-  async getSentinel1Data() {
-    try {
-      await this.ensureInitialized();
-      console.log('🛰️ Fetching latest Sentinel-1 data...');
-      
-      // Load Sentinel-1 GRD collection
-      const collection = ee.ImageCollection('COPERNICUS/S1_GRD');
-      
-      // Filter by date (last 30 days) and instrument mode
-      const now = new Date();
-      const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
-      const eeNow = ee.Date(now.toISOString());
-      const eeStartDate = ee.Date(startDate.toISOString());
-      
-      console.log(`📅 Filtering from ${startDate.toISOString().split('T')[0]} to ${now.toISOString().split('T')[0]}`);
-      
-      const filtered = collection
-        .filterDate(eeStartDate, eeNow)
-        .filter(ee.Filter.eq('instrumentMode', 'IW'))
-        .filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'))
-        .limit(5);
-      
-      // Get collection info
-      const collectionInfo = await filtered.getInfo();
-      
-      console.log(`📊 Found ${collectionInfo.features.length} Sentinel-1 images`);
-      
-      // Extract and display first 5 images data
-      const first5Images = [];
-      for (let i = 0; i < Math.min(collectionInfo.features.length, 5); i++) {
-        const image = collectionInfo.features[i];
-        const imageData = {
-          index: i + 1,
-          id: image.id,
-          properties: image.properties,
-          bands: image.bands.map(band => band.id)
-        };
-        first5Images.push(imageData);
-        
-        console.log(`📸 Image ${i + 1}:`);
-        console.log(`   ID: ${image.id}`);
-        console.log(`   Date: ${image.properties.system_time_start || 'N/A'}`);
-        console.log(`   Polarization: ${image.properties.polarization || 'N/A'}`);
-        console.log(`   Instrument Mode: ${image.properties.instrumentMode || 'N/A'}`);
-        console.log(`   Orbit Pass: ${image.properties.orbitProperties_pass || 'N/A'}`);
-        console.log(`   Available Bands: ${image.bands.map(band => band.id).join(', ')}`);
+      if (!geojson) {
+        throw new Error('geojson is required');
       }
-      
-      const result = {
+
+      const geometryInput = geojson.type === 'Feature' ? geojson.geometry : geojson;
+      if (!geometryInput || !geometryInput.type) {
+        throw new Error('Invalid geojson: missing geometry');
+      }
+
+      const aoi = ee.Geometry(geometryInput);
+
+      const now = new Date();
+      const defaultEndDate = now.toISOString();
+      const defaultStartDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const eeStart = ee.Date(startDate || defaultStartDate);
+      const eeEnd = ee.Date(endDate || defaultEndDate);
+
+      let collection = ee.ImageCollection('COPERNICUS/S1_GRD')
+        .filterBounds(aoi)
+        .filterDate(eeStart, eeEnd)
+        .filter(ee.Filter.eq('instrumentMode', instrumentMode));
+
+      if (orbitPass) {
+        collection = collection.filter(ee.Filter.eq('orbitProperties_pass', orbitPass));
+      }
+
+      if (polarization) {
+        collection = collection.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization));
+      }
+
+      const count = await collection.size().getInfo();
+      if (!count || count < 1) {
+        return {
+          success: false,
+          message: 'No Sentinel-1 images found for AOI and date range',
+          meta: {
+            startDate: startDate || defaultStartDate,
+            endDate: endDate || defaultEndDate,
+            orbitPass,
+            instrumentMode,
+            polarization
+          }
+        };
+      }
+
+      const image = collection
+        .select([polarization])
+        .median()
+        .clip(aoi);
+
+      const meanStdReducer = ee.Reducer.mean().combine({
+        reducer2: ee.Reducer.stdDev(),
+        sharedInputs: true
+      });
+
+      const vvStats = await image.reduceRegion({
+        reducer: meanStdReducer,
+        geometry: aoi,
+        scale,
+        maxPixels: 1e9,
+        bestEffort: true
+      }).getInfo();
+
+      const vvBandName = polarization;
+      const meanKey = `${vvBandName}_mean`;
+      const stdKey = `${vvBandName}_stdDev`;
+
+      const vvMean = vvStats ? vvStats[meanKey] : null;
+      const vvStd = vvStats ? vvStats[stdKey] : null;
+
+      const vvPercentiles = await image.reduceRegion({
+        reducer: ee.Reducer.percentile([5, 25, 50, 75, 95]),
+        geometry: aoi,
+        scale,
+        maxPixels: 1e9,
+        bestEffort: true
+      }).getInfo();
+
+      const vvHistogram = await image.reduceRegion({
+        reducer: ee.Reducer.histogram({ maxBuckets: 64 }),
+        geometry: aoi,
+        scale,
+        maxPixels: 1e9,
+        bestEffort: true
+      }).getInfo();
+
+      const vvForTexture = image.select([vvBandName]).multiply(10).toInt();
+      const texture = vvForTexture.glcmTexture({ size: textureSize });
+      const contrastBand = texture.select([`${vvBandName}_contrast`]);
+      const homogeneityBand = texture.select([`${vvBandName}_idm`]);
+
+      const textureStats = await ee.Image.cat([contrastBand, homogeneityBand])
+        .reduceRegion({
+          reducer: ee.Reducer.mean(),
+          geometry: aoi,
+          scale,
+          maxPixels: 1e9,
+          bestEffort: true
+        })
+        .getInfo();
+
+      const textureContrastMean = textureStats ? textureStats[`${vvBandName}_contrast_mean`] : null;
+      const textureHomogeneityMean = textureStats ? textureStats[`${vvBandName}_idm_mean`] : null;
+
+      const oilMask = image.select([vvBandName]).lt(oilThresholdDb);
+      const pixelArea = ee.Image.pixelArea();
+      const oilAreaDict = await pixelArea
+        .updateMask(oilMask)
+        .reduceRegion({
+          reducer: ee.Reducer.sum(),
+          geometry: aoi,
+          scale,
+          maxPixels: 1e9,
+          bestEffort: true
+        })
+        .getInfo();
+
+      const oilAreaM2 = oilAreaDict ? oilAreaDict.area : null;
+
+      return {
         success: true,
-        message: "Sentinel-1 data retrieved successfully",
-        first_5_images: first5Images,
-        total_images_in_collection: collectionInfo.features.length
+        meta: {
+          startDate: startDate || defaultStartDate,
+          endDate: endDate || defaultEndDate,
+          orbitPass,
+          instrumentMode,
+          polarization,
+          scale,
+          textureSize,
+          oilThresholdDb,
+          imageCount: count
+        },
+        derived_metrics: {
+          mean_backscatter: vvMean,
+          std_backscatter: vvStd,
+          vv_backscatter: vvMean,
+          texture_contrast: textureContrastMean,
+          texture_homogeneity: textureHomogeneityMean,
+          oil_area_m2: oilAreaM2,
+          oil_area_km2: oilAreaM2 == null ? null : oilAreaM2 / 1e6
+        },
+        supporting_fields: {
+          vv_reduce_region: vvStats,
+          vv_percentiles: vvPercentiles,
+          vv_histogram: vvHistogram,
+          texture_reduce_region_mean: textureStats
+        }
       };
-      
-      console.log('✅ Sentinel-1 data retrieval completed!');
-      return result;
-      
     } catch (error) {
-      console.error('❌ Failed to fetch Sentinel-1 data:', error.message);
+      console.error('❌ Failed to compute Sentinel-1 AOI metrics:', error.message);
       throw error;
     }
   }
-}
-
-// Test function
-async function testEarthEngineNodeJS() {
-  console.log('🚀 Testing Earth Engine Node.js API Integration...');
-  
-  try {
-    const eeAPI = new EarthEngineAPI();
-    
-    // Test 1: Initialize
-    await eeAPI.initialize();
-    
-    // Test 2: Get Sentinel-1 data
-    const sentinelData = await eeAPI.getSentinel1Data();
-    console.log('🛰️ Sentinel-1 Data:', sentinelData);
-    
-    console.log('🎉 All Earth Engine Node.js API tests passed!');
-    
-  } catch (error) {
-    console.error('❌ Earth Engine Node.js API test failed:', error.message);
-  }
-}
-
-// Run test if this file is executed directly
-if (require.main === module) {
-  testEarthEngineNodeJS();
 }
 
 module.exports = EarthEngineAPI;

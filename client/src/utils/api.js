@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://pose-ee3x.onrender.com',
-    // baseURL: 'http://localhost:5000',
+  // baseURL: 'https://pose-ee3x.onrender.com',
+    baseURL: 'http://localhost:5000',
 
-  timeout: 10000,
+  timeout: 0,
 });
 
 // Request interceptor for JWT
