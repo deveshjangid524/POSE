@@ -79,6 +79,8 @@ function Sentinel1AOI({ onDataFetched }) {
       }
 
       setFetchLoading(true);
+      console.log('Fetching AOI data with GeoJSON:', aoiGeoJson);
+      
       const res = await API.post('/api/sentinel1/aoi-metrics', {
         geojson: aoiGeoJson,
         polarization: 'VV',
@@ -91,11 +93,16 @@ function Sentinel1AOI({ onDataFetched }) {
         includeDistributions: false
       });
 
+      console.log('✅ AOI data fetched successfully:', res.data);
+      console.log('📊 Raw metrics:', JSON.stringify(res.data, null, 2));
+      
       setFetchResult(res.data);
-      if (typeof onDataFetched === 'function') {
-        onDataFetched(res.data);
-      }
+      // Remove automatic navigation - user will click button manually
+      // if (typeof onDataFetched === 'function') {
+      //   onDataFetched(res.data);
+      // }
     } catch (e) {
+      console.error('❌ Failed to fetch AOI data:', e);
       setError(e?.response?.data?.message || e?.message || 'Failed to fetch AOI data');
     } finally {
       setFetchLoading(false);
@@ -170,12 +177,28 @@ function Sentinel1AOI({ onDataFetched }) {
       </div>
 
       <div className="mt-6">
-        <div className="text-sm font-medium text-gray-700 mb-2">Fetched Metrics (raw)</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-medium text-gray-700">Fetched Metrics (raw)</div>
+          {fetchResult && (
+            <button
+              onClick={() => {
+                console.log('📤 Sending data to Data Analysis:', fetchResult);
+                if (typeof onDataFetched === 'function') {
+                  onDataFetched(fetchResult);
+                }
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+              type="button"
+            >
+              Send to Data Analysis
+            </button>
+          )}
+        </div>
         <textarea
           className="w-full h-[280px] font-mono text-xs p-3 rounded-lg border border-gray-200 bg-gray-50"
           readOnly
           value={fetchResult ? JSON.stringify(fetchResult, null, 2) : ''}
-          placeholder="Click Fetch Data to retrieve Sentinel-1 metrics for the selected AOI"
+          placeholder="Click Fetch Data to retrieve Sentinel-1 metrics for selected AOI"
         />
       </div>
 

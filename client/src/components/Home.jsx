@@ -5,6 +5,13 @@ import bgImage from '../assets/I1.jpg';
 function Home() {
   const navigate = useNavigate();
 
+  const handleDashboardClick = () => {
+    console.log('Dashboard button clicked');
+    console.log('Current localStorage token:', !!localStorage.getItem('token'));
+    console.log('Current localStorage user:', !!localStorage.getItem('user'));
+    navigate('/dashboard');
+  };
+
   return (
     <div className="w-full min-h-screen m-0 p-0">
       <div
@@ -23,7 +30,7 @@ function Home() {
           <div className="flex gap-4 justify-center">
             <button
               className="bg-blue-500 text-white p-3 text-xl border-none rounded cursor-pointer transition-all duration-300 hover:bg-blue-600 hover:-translate-y-0.5"
-              onClick={() => navigate('/dashboard')}
+              onClick={handleDashboardClick}
             >
               Go to Dashboard
             </button>

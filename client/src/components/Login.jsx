@@ -27,18 +27,38 @@ function Login() {
 
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      console.log('Attempting authentication:', { endpoint, username: formData.username });
       const response = await API.post(endpoint, formData);
+      
+      console.log('Full authentication response:', response);
+      console.log('Response data:', response.data);
+      
+      // Check if response has token and user
+      if (!response.data.token || !response.data.user) {
+        console.error('Invalid response structure:', response.data);
+        setError('Invalid response from server');
+        return;
+      }
       
       // Store token and user info
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      // Trigger auth change event
+      console.log('Token and user stored in localStorage');
+      console.log('Stored token:', !!localStorage.getItem('token'));
+      console.log('Stored user:', !!localStorage.getItem('user'));
+      
+      // Trigger auth change event immediately to update App state
+      console.log('Triggering auth change');
       window.dispatchEvent(new Event('authChange'));
       
-      // Redirect to home page
-      navigate('/home');
+      // Navigate after auth state is updated
+      setTimeout(() => {
+        console.log('Navigating to /home');
+        navigate('/home');
+      }, 10);
     } catch (err) {
+      console.error('Authentication error:', err);
       setError(err.response?.data?.message || 'Authentication failed');
     } finally {
       setLoading(false);

@@ -20,10 +20,10 @@ API.interceptors.request.use(config => {
 API.interceptors.response.use(
   response => response,
   error => {
+    // Only clear token on explicit 401 authentication errors
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+      console.log('API - 401 error, checking if should clear token');
+      // Don't clear token immediately - let ProtectedRoute handle validation
     }
     return Promise.reject(error);
   }
